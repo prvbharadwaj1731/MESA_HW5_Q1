@@ -39,13 +39,13 @@ static const char* getStateName(state input_state_enum)
 
 
 //State change function
-static void changeState(state curr_state, state new_state)
+static void changeState(task_s curr_task, state new_state)
 {
 #ifdef ENABLE_LOGGING
-    printf("State transition from %s to %s occured.\n", getStateName(curr_state), getStateName(new_state));
+    printf("State transition from %s to %s occured.\n", getStateName(curr_task.current_state), getStateName(new_state));
 #endif    
-    curr_state = new_state;  //this operation should be atomic
-    printf("Current state = %s.\n", getStateName(curr_state));
+    curr_task.current_state = new_state;  //this operation should be atomic
+    printf("Current state = %s.\n", getStateName(curr_task.current_state));
 }
 
 /*
@@ -62,79 +62,79 @@ void handleTask(task_s input_task, event *current_event)
             switch(input_task.current_state){
         case new_task:
             if(*current_event == create || *current_event == admit)
-                changeState(input_task.current_state, suspended_ready);
+                changeState(input_task, suspended_ready);
             else if(*current_event == terminate)
-                changeState(input_task.current_state, terminated);
+                changeState(input_task, terminated);
         break;
 
         case suspended_ready:
             if(*current_event == activate || *current_event == exception_cleared)
-                changeState(input_task.current_state, ready);
+                changeState(input_task, ready);
             else if(*current_event == terminate)
-                changeState(input_task.current_state, terminated);
+                changeState(input_task, terminated);
         break;
 
         case ready:
             if(*current_event == dispatch)
-                changeState(input_task.current_state, running);
+                changeState(input_task, running);
             else if(*current_event == suspend || *current_event == exception)
-                changeState(input_task.current_state, suspended_ready);
+                changeState(input_task, suspended_ready);
             else if(*current_event == terminate)
-                changeState(input_task.current_state, terminated);
+                changeState(input_task, terminated);
         break;
 
         case running:
             if(*current_event == preempt)
-                changeState(input_task.current_state, ready);
+                changeState(input_task, ready);
             else if(*current_event == terminate)
-                changeState(input_task.current_state, terminated);
+                changeState(input_task, terminated);
             else if(*current_event == suspend || *current_event == exception)
-                changeState(input_task.current_state, suspended_ready);
+                changeState(input_task, suspended_ready);
             else if(*current_event == semtake || *current_event == wait || *current_event == mutex_lock)
-                changeState(input_task.current_state, blocked);
+                changeState(input_task, blocked);
             else if(*current_event == task_delay || *current_event == pause || *current_event == sleep)
-                changeState(input_task.current_state, waiting);
+                changeState(input_task, waiting);
             else if(*current_event == terminate)
-                changeState(input_task.current_state, terminated);
+                changeState(input_task, terminated);
             else //No other event has occured, indicating that task is picked up by kernel for execution
-                changeState(input_task.current_state, kernel);
+                changeState(input_task, kernel);
         break;
 
         case waiting:
             if(*current_event == suspend || *current_event == exception)
-                changeState(input_task.current_state, suspended_delayed);
+                changeState(input_task, suspended_delayed);
             if(*current_event == delay_timeout || *current_event == wakeup)
-                changeState(input_task.current_state, ready);
+                changeState(input_task, ready);
             else if(*current_event == terminate)
-                changeState(input_task.current_state, terminated);
+                changeState(input_task, terminated);
 
         case blocked:
             if(*current_event == mutex_unlock || *current_event == semgive)
-                changeState(input_task.current_state, ready);
+                changeState(input_task, ready);
             else if(*current_event == suspend || *current_event == exception)
-                changeState(input_task.current_state, suspended_blocked);
+                changeState(input_task, suspended_blocked);
             else if(*current_event == terminate)
-                changeState(input_task.current_state, terminated);
+                changeState(input_task, terminated);
             
         break;
 
         case suspended_blocked:
             if(*current_event == activate || *current_event == exception_cleared)
-                changeState(input_task.current_state, blocked);
+                changeState(input_task, blocked);
             if(*current_event == mutex_unlock || *current_event == semgive)
-                changeState(input_task.current_state, suspended_ready);
+                changeState(input_task, suspended_ready);
             else if(*current_event == terminate)
-                changeState(input_task.current_state, terminated);
+                changeState(input_task, terminated);
             
         break;
 
         case suspended_delayed:
             if(*current_event == delay_timeout || *current_event == wakeup)
-                changeState(input_task.current_state, suspended_ready);
+                changeState(input_task, suspended_ready);
             if(*current_event == activate || *current_event == exception_cleared)
-                changeState(input_task.current_state, waiting);
+                changeState(input_task, waiting);
             else if(*current_event == terminate)
-                changeState(input_task.current_state, terminated);
+                changeState(input_task, terminated);
 
         break;
 

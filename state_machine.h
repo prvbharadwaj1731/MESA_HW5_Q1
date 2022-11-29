@@ -63,4 +63,4 @@ typedef struct{
 
 
 //Function descriptions for state machine handler
-void handleTask(task_s, event *);
+void handleTask(task_s input_task, event *current_event);
